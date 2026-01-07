@@ -115,9 +115,10 @@ app.use((req, res, next) => {
 
 // ---------------- ERROR HANDLER ----------------
 app.use((err, req, res, next) => {
-    const { statusCode = 500, message = "Something went wrong!" } = err;
-    res.status(statusCode).render("error.ejs", { err });
+  res.status(err.status || 500);
+  res.render('error', { message: err.message || "Something went wrong" });
 });
+
 
 // ---------------- START SERVER ----------------
 const PORT = process.env.PORT || 8080;
