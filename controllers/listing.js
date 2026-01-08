@@ -5,13 +5,17 @@ const Listing = require("../models/listing.js");
 
 const NodeGeocoder = require("node-geocoder");
 
-const options = {
-  provider: 'openstreetmap'
-};
+const geocoder = NodeGeocoder({
+  provider: "openstreetmap",
 
-const geocoder = NodeGeocoder(options);
+  // REQUIRED by OpenStreetMap Nominatim
+  userAgent: "MajorProject/1.0 (your-real-email@gmail.com)",
+  email: "pankajpraja07@gmail.com",
 
-
+  // Safety options
+  timeout: 5000,
+  formatter: null
+});
 
 
 module.exports.index = async(req , res)=>{
@@ -27,12 +31,18 @@ module.exports.createListing = async(req , res , next)=>{
    newListing.owner = req.user._id;
    newListing.image = {url , filename};
 
-   const geoData = await geocoder.geocode(newListing.location);
-    if(geoData && geoData.length > 0) {
-    newListing.latitude = geoData[0].latitude;
-    newListing.longitude = geoData[0].longitude;
-    }
+  let geoData = [];
 
+try {
+  geoData = await geocoder.geocode(newListing.location);
+} catch (err) {
+  console.error("Geocoding failed:", err.message);
+}
+
+if (geoData.length > 0) {
+  newListing.latitude = geoData[0].latitude;
+  newListing.longitude = geoData[0].longitude;
+}
 
    await newListing.save();
    req.flash("success" , "New listing created !");
@@ -66,11 +76,18 @@ module.exports.updateListing = async (req , res , next)=>{
     let listing =  await Listing.findByIdAndUpdate(id , {...req.body.listing});
 
     if(req.body.listing.location) {
-        const geoData = await geocoder.geocode(req.body.listing.location);
-        if(geoData && geoData.length > 0) {
-            listing.latitude = geoData[0].latitude;
-            listing.longitude = geoData[0].longitude;
-         }
+        let geoData = [];
+
+        try {
+            geoData = await geocoder.geocode(req.body.listing.location);
+        } catch (err) {
+            console.error("Geocoding failed:", err.message);
+        }
+
+        if (geoData.length > 0) {
+          listing.latitude = geoData[0].latitude;
+          listing.longitude = geoData[0].longitude;
+        }
     }
 
    
